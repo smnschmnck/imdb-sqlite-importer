@@ -1,10 +1,11 @@
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import type { DatasetInfo, DatasetName } from "../types/types";
 
 const datasetBaseUrl = "https://datasets.imdbws.com";
 const outputBasePath = "./.data";
 
-const downloadDataset = async ({ dataset }: { dataset: string }) => {
+const downloadDataset = async ({ dataset }: { dataset: DatasetName }) => {
   console.log(`⬇️ Starting file download for ${dataset}`);
 
   const url = `${datasetBaseUrl}/${dataset}`;
@@ -16,7 +17,7 @@ const downloadDataset = async ({ dataset }: { dataset: string }) => {
     );
   }
 
-  const outputPath = `${outputBasePath}/${dataset}`;
+  const outputPath = `${outputBasePath}/${dataset}.tsv.gz`;
 
   // ✅ Ensure parent folder exists
   await mkdir(dirname(outputPath), { recursive: true });
@@ -53,9 +54,13 @@ const downloadDataset = async ({ dataset }: { dataset: string }) => {
 
   await writer.end();
   console.log(`✅ File downloaded to ${outputPath}`);
+
+  return { dataset, path: outputPath } as DatasetInfo;
 };
 
 export const downloadDatasets = async () => {
-  await downloadDataset({ dataset: "title.episode.tsv.gz" });
-  await downloadDataset({ dataset: "title.ratings.tsv.gz" });
+  return Promise.all([
+    await downloadDataset({ dataset: "title.episode" }),
+    await downloadDataset({ dataset: "title.ratings" }),
+  ]);
 };
