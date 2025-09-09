@@ -5,7 +5,11 @@ import type { DatasetInfo, DatasetName } from "../types/types";
 const datasetBaseUrl = "https://datasets.imdbws.com";
 const outputBasePath = "./.data";
 
-const downloadDataset = async ({ dataset }: { dataset: DatasetName }) => {
+const downloadDataset = async ({
+  dataset,
+}: {
+  dataset: DatasetInfo["dataset"];
+}) => {
   console.log(`⬇️ Starting file download for ${dataset}`);
 
   const url = `${datasetBaseUrl}/${dataset}`;
@@ -58,9 +62,8 @@ const downloadDataset = async ({ dataset }: { dataset: DatasetName }) => {
   return { dataset, path: outputPath } as DatasetInfo;
 };
 
-export const downloadDatasets = async () => {
-  return Promise.all([
-    await downloadDataset({ dataset: "title.episode" }),
-    await downloadDataset({ dataset: "title.ratings" }),
-  ]);
+export const downloadDatasets = async (datasets: DatasetName[]) => {
+  return Promise.all(
+    datasets.map(async (d) => await downloadDataset({ dataset: d }))
+  );
 };
