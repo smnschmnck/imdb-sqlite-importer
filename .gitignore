@@ -36,6 +36,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # sqlite db
 sqlite.db
 sqlite.db-journal
+sqlite.db-shm
+sqlite.db-wal
 
 # temporary files
 .data
