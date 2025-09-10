@@ -16,6 +16,9 @@ type RatingRow = {
   numVotes: string;
 };
 
+// be careful increasing this you might hit sqlite limits
+const BATCH_SIZE = 5_000;
+
 // Helper: IMDb TSVs use "\N" = NULL
 function cleanNumber(val: string): number | null {
   return val === "\\N" ? null : Number(val);
@@ -38,7 +41,6 @@ export const importEpisodes = async ({ path }: EpisodeDataset) => {
   );
 
   let batch: EpisodeRow[] = [];
-  const BATCH_SIZE = 50_000;
   let count = 0;
 
   for await (const row of parseTSV<EpisodeRow>(path)) {
@@ -46,7 +48,7 @@ export const importEpisodes = async ({ path }: EpisodeDataset) => {
     if (batch.length >= BATCH_SIZE) {
       await insertEpisodes(batch);
       count += batch.length;
-      console.log(`📦 Inserted episodes rows: ${count}`);
+      process.stdout.write(`📦 Inserted episodes rows: ${count}\r`);
       batch = [];
     }
   }
@@ -75,7 +77,6 @@ export const importRatings = async ({ path }: RatingDataset) => {
   );
 
   let batch: RatingRow[] = [];
-  const BATCH_SIZE = 50_000;
   let count = 0;
 
   for await (const row of parseTSV<RatingRow>(path)) {
@@ -83,7 +84,7 @@ export const importRatings = async ({ path }: RatingDataset) => {
     if (batch.length >= BATCH_SIZE) {
       await insertRatings(batch);
       count += batch.length;
-      console.log(`📦 Inserted ratings rows: ${count}`);
+      process.stdout.write(`📦 Inserted episodes rows: ${count}\r`);
       batch = [];
     }
   }
