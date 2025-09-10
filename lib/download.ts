@@ -1,17 +1,25 @@
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import cliProgress from "cli-progress";
 import type { DatasetInfo, DatasetName } from "../types/types";
 
 const datasetBaseUrl = "https://datasets.imdbws.com";
 const outputBasePath = "./.data";
+
+const multiBar = new cliProgress.MultiBar(
+  {
+    clearOnComplete: false,
+    hideCursor: true,
+    format: "{name} |{bar}| {percentage}% | {value}/{total} MB",
+  },
+  cliProgress.Presets.shades_classic
+);
 
 const downloadDataset = async ({
   dataset,
 }: {
   dataset: DatasetInfo["dataset"];
 }) => {
-  console.log(`⬇️ Starting file download for ${dataset}`);
-
   const url = `${datasetBaseUrl}/${dataset}.tsv.gz`;
   const response = await fetch(url);
 
@@ -22,48 +30,40 @@ const downloadDataset = async ({
   }
 
   const outputPath = `${outputBasePath}/${dataset}.tsv.gz`;
-
-  // ✅ Ensure parent folder exists
   await mkdir(dirname(outputPath), { recursive: true });
 
   const file = Bun.file(outputPath);
   const writer = file.writer();
 
   const contentLength = Number(response.headers.get("content-length")) || 0;
+  const totalMB = Math.ceil(contentLength / (1024 * 1024));
+
+  const bar = multiBar.create(totalMB, 0, { name: dataset });
 
   let received = 0;
-  let lastLogged = 0;
-
-  console.log("💾 Saving file...");
 
   for await (const chunk of response.body as AsyncIterable<Uint8Array>) {
     received += chunk.length;
     writer.write(chunk);
-
     if (contentLength > 0) {
-      const progress = Math.floor((received / contentLength) * 100);
-      if (progress >= lastLogged + 5) {
-        console.log(`📦 Download progress: ${progress}%`);
-        lastLogged = progress;
-      }
-    } else {
-      if (received - lastLogged > 10 * 1024 * 1024) {
-        console.log(
-          `📦 Downloaded ${(received / (1024 * 1024)).toFixed(1)} MB...`
-        );
-        lastLogged = received;
-      }
+      const doneMB = Math.floor(received / (1024 * 1024));
+      bar.update(doneMB);
     }
   }
 
   await writer.end();
-  console.log(`✅ File downloaded to ${outputPath}`);
+  bar.update(totalMB);
+  bar.stop();
 
   return { dataset, path: outputPath } as DatasetInfo;
 };
 
 export const downloadDatasets = async (datasets: DatasetName[]) => {
-  return Promise.all(
+  const results = await Promise.all(
     datasets.map(async (d) => await downloadDataset({ dataset: d }))
   );
+
+  multiBar.stop();
+
+  return results;
 };
