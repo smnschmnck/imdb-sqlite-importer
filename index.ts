@@ -28,8 +28,10 @@ const main = async () => {
     "title.ratings",
   ]);
 
-  await importEpisodes(episodesPath);
-  await importRatings(ratingsPath);
+  const epsiodeCount = await importEpisodes(episodesPath);
+  const ratingsCount = await importRatings(ratingsPath);
+
+  console.log({ epsiodeCount, ratingsCount });
 };
 
 main();

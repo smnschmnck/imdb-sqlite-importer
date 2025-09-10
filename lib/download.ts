@@ -12,7 +12,7 @@ const downloadDataset = async ({
 }) => {
   console.log(`⬇️ Starting file download for ${dataset}`);
 
-  const url = `${datasetBaseUrl}/${dataset}`;
+  const url = `${datasetBaseUrl}/${dataset}.tsv.gz`;
   const response = await fetch(url);
 
   if (!response.ok || !response.body) {
